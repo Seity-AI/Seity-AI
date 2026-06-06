@@ -1,12 +1,9 @@
 import os
-import token
 from logging import getLogger
 from pathlib import Path
 from typing import (
-    List,
     TypedDict,
-    AbstractSet,
-    Union, Literal,
+    Literal,
 )
 
 import tiktoken
@@ -22,6 +19,8 @@ class Message(TypedDict):
 
 class Tokenizer:
 
+    num_reserved_special_tokens = 512
+
     """
     We use pre-made pat string for just now. in next update we will change it to our pat string.
 
@@ -32,9 +31,11 @@ class Tokenizer:
 
     def __init__(self, model_path: str):
         """
-        I don't have idea for this section. I will change it :|
+        Initializes the tokenizer of model
+        We use tiktoken package for first updates. We will make our tokenizer package.
 
-         model_path : Path
+        Args:
+          model_path : str
         """
         assert os.path.isfile(model_path), model_path
 
@@ -42,23 +43,48 @@ class Tokenizer:
         num_base_tokens = len(mergeable_ranks)
 
         special_tokens = [
-            ""
+            "<|begin_of_text|>",
+            "<|end_of_text|>",
+            "<|pad|>"
+            "<|reversed_special_tokens_0|>",
+            "<|reversed_special_tokens_1|>",
+            "<|reversed_special_tokens_2|>",
+            "<|reversed_special_tokens_3|>",
+            "<|start_header_id|>",
+            "<|end_header_id|>",
+            "<|reversed_special_tokens_4|>",
+            "<|eot_id|>"
+        ] + [
+            f"<|reversed_special_tokens_{i}"
+            for i in range(5, self.num_reserved_special_tokens - 5)
         ]
 
         self.special_tokens = {
-            token: num_base_tokens
+            token: num_base_tokens + i for i, token in enumerate(special_tokens)
         }
 
         self.model = tiktoken.Encoding(
             name=Path(model_path).name,
             pat_str=self.pat_str,
             mergeable_ranks=mergeable_ranks,
-            special_tokens=
+            special_tokens=self.special_tokens,
         )
+
+        self.n_words: int = self.model.n_vocab
+        self.bos_id: int = self.special_tokens["<|begin_of_text|>"]
+        self.eos_id: int = self.special_tokens["<|end_of_text|>"]
+        self.pad_id: int = self.special_tokens.get(
+            "<|pad|>",
+            self.special_tokens["<|end_of_text|>"]
+        )
+        self.stop_token = [
+            self.special_tokens["<|end_of_text|>"],
+            self.special_tokens["<|eot_id|>"],
+        ]
+        logger.info(f"WORDS: {self.n_words} - BOS ID: {self.bos_id} - EOS ID: {self.eos_id}")
+
+    def encode(self, message: Message):
         pass
 
-    def encode(self, message: Message) -> Message:
-        pass
-
-    def decode(self, message: Message) -> Message:
+    def decode(self, message: Message):
         pass
