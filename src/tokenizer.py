@@ -27,7 +27,7 @@ class Tokenizer:
     pat_string = ""
     """
     cl100k_base = tiktoken.get_encoding("cl100k_base")
-    pat_str = cl100k_base._pat_str
+    pat_str = getattr(cl100k_base, "_pat_str")
 
     def __init__(self, model_path: str):
         """
@@ -46,16 +46,16 @@ class Tokenizer:
             "<|begin_of_text|>",
             "<|end_of_text|>",
             "<|pad|>"
-            "<|reversed_special_tokens_0|>",
-            "<|reversed_special_tokens_1|>",
-            "<|reversed_special_tokens_2|>",
-            "<|reversed_special_tokens_3|>",
+            "<|reversed_special_token_0|>",
+            "<|reversed_special_token_1|>",
+            "<|reversed_special_token_2|>",
+            "<|reversed_special_token_3|>",
             "<|start_header_id|>",
             "<|end_header_id|>",
-            "<|reversed_special_tokens_4|>",
+            "<|reversed_special_token_4|>",
             "<|eot_id|>"
         ] + [
-            f"<|reversed_special_tokens_{i}"
+            f"<|reversed_special_tokens_{i}|>"
             for i in range(5, self.num_reserved_special_tokens - 5)
         ]
 
@@ -87,4 +87,9 @@ class Tokenizer:
         pass
 
     def decode(self, message: Message):
+        pass
+
+
+class MsgFormat:
+    def __init__(self):
         pass
