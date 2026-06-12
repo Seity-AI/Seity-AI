@@ -42,25 +42,25 @@ class Tokenizer:
         mergeable_ranks = load_tiktoken_bpe(model_path)
         num_base_tokens = len(mergeable_ranks)
 
-        special_tokens = [
-            "<|begin_of_text|>",
-            "<|end_of_text|>",
-            "<|pad|>"
-            "<|reversed_special_token_0|>",
-            "<|reversed_special_token_1|>",
-            "<|reversed_special_token_2|>",
-            "<|reversed_special_token_3|>",
-            "<|start_header_id|>",
-            "<|end_header_id|>",
-            "<|reversed_special_token_4|>",
-            "<|eot_id|>"
+        special_tokens_list = [
+            "<BEGIN_TEXT>",
+            "<END_TEXT>",
+            "<PAD>"
+            "<REVERSED_SPECIAL_TOKEN_0>",
+            "<REVERSED_SPECIAL_TOKEN_1>",
+            "<REVERSED_SPECIAL_TOKEN_2>",
+            "<REVERSED_SPECIAL_TOKEN_3>",
+            "<START_HEADER>",
+            "<END_HEADER>",
+            "<REVERSED_SPECIAL_TOKEN_4>",
+            "<EOT>"
         ] + [
             f"<|reversed_special_tokens_{i}|>"
             for i in range(5, self.num_reserved_special_tokens - 5)
         ]
 
         self.special_tokens = {
-            token: num_base_tokens + i for i, token in enumerate(special_tokens)
+            token: num_base_tokens + i for i, token in enumerate(special_tokens_list)
         }
 
         self.model = tiktoken.Encoding(
