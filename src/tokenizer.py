@@ -136,6 +136,10 @@ class Tokenizer:
 
         return t
 
+    def decode(self, token_ids: Sequence[int]) -> str:
+        """Decode token ids back into a text string."""
+        return self.model.decode(cast(List[int], token_ids))
+    
     def _split_whitespace_nonwhitespace(self, s: str, max_non_whitespace: int):
         """Yield substrings from `s` such that no contiguous run of non-whitespace
         characters exceeds `max_non_whitespace`.
@@ -170,7 +174,3 @@ class Tokenizer:
 
         if buffer:
             yield "".join(buffer)
-
-    def decode(self, token_ids: Sequence[int]) -> str:
-        """Decode token ids back into a text string."""
-        return self.model.decode(cast(List[int], token_ids))
