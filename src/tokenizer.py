@@ -174,8 +174,3 @@ class Tokenizer:
     def decode(self, token_ids: Sequence[int]) -> str:
         """Decode token ids back into a text string."""
         return self.model.decode(cast(List[int], token_ids))
-
-
-class MsgFormat:
-    def __init__(self):
-        pass
