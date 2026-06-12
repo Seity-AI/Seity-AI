@@ -2,8 +2,13 @@ import os
 from logging import getLogger
 from pathlib import Path
 from typing import (
+    AbstractSet,
+    List,
+    Sequence,
     TypedDict,
     Literal,
+    Union,
+    cast,
 )
 
 import tiktoken
@@ -53,7 +58,8 @@ class Tokenizer:
 
         # Extend with generated reserved tokens to reach the expected token count.
         # BUGFIX: original range logic could produce one extra token and mismatch num_reserved_special_tokens.
-        remaining_reserved = self.num_reserved_special_tokens - len(special_tokens_list)
+        # Ensure we don't try to create a negative number of reserved tokens
+        remaining_reserved = max(0, self.num_reserved_special_tokens - len(special_tokens_list))
         special_tokens_list += [
             f"<REVERSED_SPECIAL_TOKEN_{i}>"
             for i in range(5, 5 + remaining_reserved)
@@ -88,13 +94,86 @@ class Tokenizer:
             f"WORDS: {self.n_words} - BOS ID: {self.bos_id} - EOS ID: {self.eos_id}"
         )
 
-    def encode(self, message: Message):
+    def encode(
+            self,
+            s: str,
+            *,
+            bos: bool,
+            eos: bool,
+            allowed_special: Union[Literal["all"], AbstractSet[str]] = "all",
+            disallowed_special: Union[Literal["all"], AbstractSet[str]] = "all",
+            ) -> List[int]:
         """Encode a structured Message into a list of token ids."""
-        return self.model.encode(message["message"])
 
-    def decode(self, token_ids):
+        assert type(s) is str
+
+        TIKTOKEN_MAX_ENCODE_CHARS = 400_000
+
+        MAX_NO_WHITESPACE_CHARS = 100_000
+
+        substr = (
+            substr
+            for i in range(0, len(s), TIKTOKEN_MAX_ENCODE_CHARS)
+            for substr in self._split_whitespace_nonwhitespace(
+                s[i : i + TIKTOKEN_MAX_ENCODE_CHARS], MAX_NO_WHITESPACE_CHARS
+            )
+        )
+
+        t: List[int] = []
+        for substr in substr:
+            t.extend(
+                self.model.encode(
+                    substr,
+                    allowed_special=allowed_special,
+                    disallowed_special=disallowed_special,
+                )  
+            )
+
+        if bos:
+            t.insert(0, self.bos_id)
+        if eos:
+            t.append(self.eos_id)
+
+        return t
+
+    def _split_whitespace_nonwhitespace(self, s: str, max_non_whitespace: int):
+        """Yield substrings from `s` such that no contiguous run of non-whitespace
+        characters exceeds `max_non_whitespace`.
+
+        This preserves whitespace runs and only splits extremely long words.
+        """
+        import re
+
+        if not s:
+            return
+
+        token_re = re.compile(r"\S+|\s+")
+        buffer = []
+
+        def flush_buffer():
+            if buffer:
+                yield "".join(buffer)
+                buffer.clear()
+
+        for match in token_re.finditer(s):
+            token = match.group(0)
+            if token.isspace() or len(token) <= max_non_whitespace:
+                buffer.append(token)
+            else:
+                # token is a very long non-whitespace run; flush any accumulated buffer first
+                if buffer:
+                    yield from flush_buffer()
+
+                # split the long token into chunks
+                for i in range(0, len(token), max_non_whitespace):
+                    yield token[i : i + max_non_whitespace]
+
+        if buffer:
+            yield "".join(buffer)
+
+    def decode(self, token_ids: Sequence[int]) -> str:
         """Decode token ids back into a text string."""
-        return self.model.decode(token_ids)
+        return self.model.decode(cast(List[int], token_ids))
 
 
 class MsgFormat:
