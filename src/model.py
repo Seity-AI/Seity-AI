@@ -27,13 +27,10 @@ class RMSNorm(nn.Module):
     def forward(self,x ):
         return nn.functional.rms_norm(x, (self.dim,),self.weight, self.eps)
 
-class Transformers:
+class Transformer:
     def __init__(self):
         pass
 
 class Model:
     def __init__(self):
         pass
-
-if __name__ == "__main__":
-    model = Model()
