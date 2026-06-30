@@ -24,7 +24,6 @@ class ModelArgs:
 # Root Mean Square Normalization layer
 # Implements RMS normalization for neural network inputs
 class RMSNorm(nn.Module):
-
     def __init__(self, dim: int, eps: float = 1e-6):
         super().__init__()  # Initialize parent class
         self.dim = dim  # Dimension of input tensor
